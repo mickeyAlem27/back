@@ -2,7 +2,29 @@ import { generateToken } from "../lib/utils.js";
 import bcrypt from "bcryptjs";
 import User from "../models/User.js";
 import cloudinary from "../lib/cloudinary.js";
+// Send welcome email
+export const sendWelcomeEmail = async (user) => {
+  const userName = user.fullName || user.email.split('@')[0];
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: user.email,
+    subject: 'Welcome to My Awesome App! 🎉',
+    html: `
+      <h2>Welcome, ${userName}!</h2>
+      <p>We're thrilled to have you join My Awesome App! 🚀</p>
+      <p>Start exploring our features like real-time messaging, multimedia sharing, and profile customization.</p>
+      <p>Have questions? Reach out to us anytime!</p>
+      <p>Best,<br>The My Awesome App Team</p>
+    `
+  };
 
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`Welcome email sent to ${user.email}`);
+  } catch (error) {
+    console.error('Error sending welcome email:', error);
+  }
+};
 // Signup a new user
 export const signup = async (req, res) => {
   const { fullName, email, password, bio } = req.body;

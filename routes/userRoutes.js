@@ -1,10 +1,10 @@
 import express from "express";
-import { checkAuth, login, signup, updateProfile, addContact, removeContact, searchUsers, blockUser, unblockUser } from "../controllers/userController.js";
+import { checkAuth, login, signup, updateProfile, addContact, removeContact, searchUsers, blockUser, unblockUser, sendWelcomeEmail } from "../controllers/userController.js";
 import { getMe, requestPasswordReset, resetPassword } from "../controllers/authController.js";
 import { protectRoute } from "../middleware/auth.js";
 
 const userRouter = express.Router();
-
+userRouter.post("/sendWelcomeEmail",sendWelcomeEmail)
 userRouter.post("/signup", signup);
 userRouter.post("/login", login);
 userRouter.post("/request-password-reset", requestPasswordReset); // New route

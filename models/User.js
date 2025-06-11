@@ -12,9 +12,17 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: true,
-    minlength: 6,
-  },
+    required: [true, 'Password is required'],
+    minlength: [6, 'Password must be at least 6 characters long'],
+    validate: {
+      validator: function (value) {
+        // Requires at least one special character
+        return /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(value);
+      },
+      message: 'Password must contain at least one special character (e.g., !@#$%^&*)'
+    }
+  
+},
   profilePic: {
     type: String,
     default: "",
