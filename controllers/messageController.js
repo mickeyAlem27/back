@@ -95,29 +95,46 @@ export const sendMessage = async (req, res) => {
 export const deleteMessage = async (req, res) => {
   try {
     const { messageId } = req.params;
+    const { deleteFor } = req.query; // Get deleteFor from query params
     const userId = req.user._id;
 
     const message = await Message.findById(messageId);
     if (!message) {
-      return res.json({ success: false, message: "Message not found" });
+      return res.status(404).json({ success: false, message: "Message not found" });
     }
 
     if (message.senderId.toString() !== userId.toString()) {
-      return res.json({ success: false, message: "Unauthorized to delete this message" });
+      return res.status(403).json({ success: false, message: "Unauthorized to delete this message" });
     }
 
-    message.isDeleted = true;
-    await message.save();
+    if (deleteFor === 'me') {
+      // Mark message as deleted only for the sender
+      await Message.updateOne(
+        { _id: messageId },
+        { $addToSet: { deletedFor: userId } }
+      );
+      console.log(`Message ${messageId} marked as deleted for user ${userId}`);
+    } else if (deleteFor === 'everyone') {
+      // Delete message for both users
+      await Message.deleteOne({ _id: messageId });
+      console.log(`Message ${messageId} deleted for everyone`);
 
-    const receiverSocketId = userSocketMap[message.receiverId];
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit("messageDeleted", messageId);
+      // Emit socket event to receiver
+      const receiverSocketId = userSocketMap[message.receiverId.toString()];
+      if (receiverSocketId) {
+        req.io.to(receiverSocketId).emit('messageDeleted', messageId);
+        console.log(`Emitted messageDeleted event to receiver ${message.receiverId} for message ${messageId}`);
+      } else {
+        console.log(`No socket found for receiver ${message.receiverId}`);
+      }
+    } else {
+      return res.status(400).json({ success: false, message: "Invalid deleteFor parameter" });
     }
 
-    res.json({ success: true, message: "Message deleted" });
+    return res.json({ success: true, message: "Message deleted successfully" });
   } catch (error) {
-    console.log(error.message);
-    res.json({ success: false, message: error.message });
+    console.error("Delete message error:", error.message);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
